@@ -1,0 +1,197 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{siunitx}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\setlist{noitemsep,topsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+
+\title{Vertical Farm - Tasks}
+\author{Patrick Schaffner\\patrick.schaffner@unisg.ch}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Frame}
+\subsection{Construction}
+\subsection{Electronics Integration}
+
+
+\section{Automation}
+
+These tasks require programming a microcontroller,
+such as the Arduino or LoPy, and wiring up electrical components.
+Only rudimentary knowledge of programming and electrical engineering is required
+as step-by-step instructions are readily available on the internet.
+
+Some facts about writing code that cannot be stressed enough:
+\begin{itemize}
+ \item Programming is an iterative task.
+  Try to start out as simple as possible, test your code thoroughly to
+  identify errors early on, and only then add more functionality (which again should be
+  tested immediately). Writing the final code in one go and then trying to figure
+  out where the errors are is rarely successful, especially when electrical components are involved.
+  If you have troubles finding an error, try simplifying your code until you have a \href{https://en.wikipedia.org/wiki/Minimal_Working_Example}{minimal working example}.
+  The most promising strategy for getting help on programming websites is to post a minimal working example.
+ \item \href{https://codeahoy.com/2016/04/30/do-experienced-programmers-use-google-frequently/}{Using Google
+  is essential to software development.} If you use Google once for every line of code, you're probably
+  doing it right. There are too many details in programming to remember and there's no need to reinvent the wheel.
+  Every task here has already been done by someone else, and every error you'll encounter has already been
+  asked about somewhere. The difficult thing is
+  \href{https://knightlab.northwestern.edu/2014/03/13/googling-for-code-solutions-can-be-tricky-heres-how-to-get-started/}{using Google efficiently}.
+\end{itemize}
+
+
+\subsection{Sensors}
+
+Several sensors need to be wired up to a microcontroller for reading the state
+of the vertical farm. These tasks require following instructions to build an
+electrical circuit (using a breadboard, no soldering) and using the microcontrollers
+built-in functions to read voltage signals. Only little computation is necessary.
+
+Additionally usage and necessary maintenance task shall be documented.
+
+
+\subsubsection{pH-Meter}
+
+Required items and resources:
+\begin{itemize}
+ \item Arduino or LoPy (advanced)
+ \item Analog pH sensor kit for Arduino
+ \
+ \item Breadboard \& jumper wires
+ \item pH calibration solution
+ \item \href{https://www.dfrobot.com/wiki/index.php/PH_meter(SKU:_SEN0161)}{pH meter manual}
+ \item \textit{Advanced:} External 5V DC power supply.
+\end{itemize}
+
+Instead of an Arduino a LoPy microcontroller may be used. This will be more difficult and
+requires additional circuit elements (not documented here) as the LoPy runs on 3.3V while
+the sensor needs and returns 5V. In that case the external 5V power supply must be used and
+a \href{https://www.allaboutcircuits.com/tools/voltage-divider-calculator/}{voltage divider}
+consisting of 2 resistors must be used to rescale the sensor output from 5V to 3.3V.
+
+Instructions:
+\begin{itemize}
+ \item Connect the sensor to the microcontroller's analog input pin.
+ \item Read voltage values from the input pin.
+ \item Convert voltage to pH value.
+ \item Write function reading and returning pH values from the sensor.
+ \item Calibrate sensor and add corrections to the code (get \textit{correct} pH values).
+ \item \textit{Advanced:} Increase accuracy by powering the sensor with an external power supply instead of the microcontroller.
+\end{itemize}
+
+The manual includes all necessary circuit schematics, program code, and instructions to complete this task.
+Note that the given program code is more complicated/sophisticated than necessary.
+Breaking it down to the important bits would be a plus.
+
+\textit{Advanced:} Insert an external power supply by
+\begin{itemize}
+ \item connecting the power supply's negative terminal to the microcontroller's ground,
+ \item disconnect the sensor's positive terminal from the microcontroller and connect it to the power supply's positive terminal.
+\end{itemize}
+
+
+\subsubsection{Temperature / Humidity Sensor}
+
+Required items and resources:
+\begin{itemize}
+ \item Arduino or LoPy (advanced)
+ \item DHT11 digital temperature \& humidity sensor
+ \item 5k\si{\ohm} resistor
+ \item Breadboard \& jumper wires
+ \item \href{https://learn.adafruit.com/dht}{Adafruit DHT tutorial}
+ \item \href{http://www.micro4you.com/files/sensor/DHT11.pdf}{DHT11 manual}
+ \item \href{https://github.com/niesteszeck/idDHT11}{idDHT11}
+ \item \href{http://playground.arduino.cc/Main/DHTLib}{DHTLib}
+ \item \href{https://github.com/johnmcdnz/LoPy-DHT-transmission}{Example code for LoPy}
+\end{itemize}
+
+Instead of an arduino a LoPy microcontroller may be used. However, there might not already exist
+software libraries and you'll have to implement the highly time-critical protocol for yourself
+(see example code).
+
+Instructions:
+\begin{itemize}
+ \item Connect the sensor to the arduino according to the circuit schematics given in the tutorial/manual.
+ \item Include a DHT software library to your arduino project.
+ \item Try reading temperature and humidity values through the functions provided by the included library.
+ \item Write a function that calls the library and returns temperature/humidity data.
+\end{itemize}
+
+The tutorial and manual show how to wire up the sensor.
+The manual also outlines the protocol used to communicate with it,
+but there already exist readily available arduino software libraries for that.
+Check the tutorial to see how to include software libraries to your project.
+
+Two alternative libraries are listed above in case the tutorial doesn't work.
+See \href{https://www.arduino.cc/en/Guide/Libraries#toc5}{this} on how to manually include libraries.
+Libraries always include example code in the ``examples'' folder.
+
+
+\subsubsection{Light Sensor}
+
+Required items and resources:
+\begin{itemize}
+ \item Arduino or LoPy
+ \item Photocell (light sensor)
+ \item 10k\si{\ohm} resistor (or higher)
+ \item Breadboard \& jumper wires
+ \item \href{https://learn.adafruit.com/photocells/using-a-photocell}{Adafruit photocell tutorial}
+\end{itemize}
+
+Instructions:
+\begin{itemize}
+ \item Wire up photocell as outlined in the tutorial. Connect it to an analog input pin.
+ \item Read analog voltage values from input pin.
+ \item Convert it to a luminosity metric (lux if possible, or just ``bright'', ``dim'', and ``dark'').
+ \item Write a function that reads values from the sensor and returns the luminosity metric.
+\end{itemize}
+
+
+\subsubsection{Water Level Meter}
+
+Required items and resources:
+\begin{itemize}
+ \item Arduino or LoPy
+ \item Water level sensor
+ \item Breadboard \& jumper wires
+ \item \href{http://scidle.com/how-to-use-a-water-level-sensor-module-with-arduino/}{Water level sensor tutorial}
+\end{itemize}
+
+Instructions:
+\begin{itemize}
+ \item Wire positive and negative pins to 5V and GND.
+ \item Wire the output pin to an analog input pin on the Arduino.
+ \item Read analog values from the input pin. Higher values mean more water.
+ \item Measure water level. Create a graph with water level on the X axis and input pin voltage on the Y axis.
+ \item Write a function with no arguments that reads voltage values from the sensor and returns the water level in cm.
+\end{itemize}
+
+
+\subsubsection{Electrical Conductivity Meter}
+\subsection{Pumps}
+\subsubsection{Dosage Pumps}
+\subsubsection{Main Pump}
+\subsection{Lights}
+\subsection{LoRa Communication}
+\subsection{Control}
+\section{Server}
+\subsection{LoRa Communication}
+\subsection{Frontend}
+\subsubsection{Status Report}
+\subsubsection{Command Panel}
+\subsubsection{Device Management}
+\subsection{Alerts}
+
+\end{document}
