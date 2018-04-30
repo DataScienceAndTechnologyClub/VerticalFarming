@@ -49,13 +49,13 @@ void loop() {
   // read temperature and humidity and give error if not successful
   if (!temperature(&temp, &humid)) {
   Serial.println("Failed to read from DHT sensor");
+  } else {
+    Serial.print("Humidity: ");
+    Serial.print(humid);
+    Serial.println(" %\t");
+    Serial.print("Temperature: ");
+    Serial.print(temp);
+    Serial.println(" *C\t");
+    Serial.println("*******");
   }
-  
-  Serial.print("Humidity: ");
-  Serial.print(humid);
-  Serial.println(" %\t");
-  Serial.print("Temperature: ");
-  Serial.print(temp);
-  Serial.println(" *C\t");
-  Serial.println("*******");
 }
