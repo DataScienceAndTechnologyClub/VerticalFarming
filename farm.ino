@@ -24,6 +24,98 @@ void pump(int pump_pin, double ml) {
 }
 
 
+/* PH Sensor */
+
+#define PH_PIN A2
+#define PH_SAMPLE_N 10
+#define PH_INIT_OFFSET 2.8 //0
+#define PH_INIT_SLOPE 2.09 //3.5
+
+double ph_offset;
+double ph_slope;
+double ph_cal7;
+double ph_cal4;
+bool ph_cal;
+
+void initPH() {
+  ph_offset = PH_INIT_OFFSET;
+  ph_slope = PH_INIT_SLOPE;
+  ph_cal7 = NAN;
+  ph_cal4 = NAN;
+  ph_cal = false;
+  pinMode(PH_PIN, INPUT);
+}
+
+double readPH() {
+  return readPHVoltage()*ph_slope + ph_offset;
+}
+
+double readPHVoltage() {
+  double volts = 0;
+  for (int i=0;i<PH_SAMPLE_N;i++) {
+    volts += analogRead(PH_PIN)/1024.0*5;
+    delay(1);
+  }
+  volts/=PH_SAMPLE_N;
+  return volts;
+}
+
+void calibratePH(char cmd[]) {
+  if (strstr(cmd,"ENTERPH")) {
+    if (!ph_cal) Serial.println("SUCCESS: Begin calibration of pH probe. Put it into pH 7 buffer and type 'CALPH'. Type 'EXITPH' to abort.");
+    else Serial.println("SUCCESS: pH calibration reset. Put it into pH 7 buffer and type 'CALPH'. Type 'EXITPH' to abort.");
+    ph_cal = true;
+    ph_cal4 = NAN;
+    ph_cal7 = NAN;
+  }
+  else if (strstr(cmd,"CALPH")) {
+    if (!ph_cal) {
+      Serial.println("ERROR: pH probe not in calibration mode. Type 'ENTERPH' first.");
+      return;
+    }
+    double volts = readPHVoltage();
+    Serial.print("Volts: ");
+    Serial.println(volts);
+    Serial.print("Buffer solution: ");
+    if (isnan(ph_cal7)) {
+      Serial.println(7);
+      ph_cal7 = volts;
+      Serial.println("SUCCESS: Put pH probe into pH 4 buffer and type 'CALPH'. Type 'ENTERPH' to reset, or 'EXITPH' to abort.");
+    }
+    else if (isnan(ph_cal4)) {
+      Serial.println(4);
+      ph_cal4 = volts;
+      Serial.println("SUCCESS: Type 'EXITPH' to finalize calibration. Type 'ENTERPH' to reset.");
+    }
+    else {
+      Serial.println("ERROR: Calibration measures already taken. Type 'EXITPH' to finalize calibration, or 'ENTERPH' to reset.");
+    }
+  }
+  else if (strstr(cmd,"EXITPH")) {
+    if (!ph_cal) {
+      Serial.println("ERROR: pH probe not in calibration mode. Type 'ENTERPH' first.");
+      return;
+    }
+    if (isnan(ph_cal7) || isnan(ph_cal4)) {
+      Serial.println("SUCCESS: pH calibration incomplete. Aborting.");
+    }
+    else {
+      Serial.println("SUCCESS: pH calibration complete.");
+      ph_slope = 3.0/(ph_cal7 - ph_cal4);
+      ph_offset = 4.0 - ph_slope * ph_cal4;
+      Serial.print("Offset: ");
+      Serial.println(ph_offset);
+      Serial.print("Slope: ");
+      Serial.println(ph_slope);
+    }
+    ph_cal = false;
+  }
+  else {
+    Serial.println("ERROR: Command unknown. Available commands: 'ENTERPH', 'CALPH', 'EXITPH'.");  
+  }
+}
+
+
 /* EC Sensor */
 
 #define EC_PIN A1
@@ -58,10 +150,23 @@ double calibrateEC(char cmd[]) {
 /* Temperature Sensor */
 
 #define TEMPERATURE_PIN 9
+#define TEMPERATURE_TIMEOUT 1000
 
 OneWire temp_sensor(TEMPERATURE_PIN);
 
+double last_temperature;
+unsigned long last_temperature_time;
+
+void initTemperature() {
+  last_temperature = NAN;
+  last_temperature_time = 0;
+}
+
 double readTemperature() {
+
+  if (!isnan(last_temperature) && millis()<last_temperature_time+TEMPERATURE_TIMEOUT)
+    return last_temperature;
+    
   byte data[12];
   byte addr[8];
 
@@ -93,7 +198,9 @@ double readTemperature() {
   }
   temp_sensor.reset_search();
 
-  return ((data[1] << 8) | data[0]) / 16;
+  last_temperature = ((data[1] << 8) | data[0]) / 16;
+  last_temperature_time = millis();
+  return last_temperature;
 }
 
 
@@ -103,7 +210,9 @@ double readTemperature() {
 
 void setup() {
   Serial.begin(BAUD_RATE);
+  initTemperature();
   initEC();
+  initPH();
 }
 
 void loop() {
@@ -112,11 +221,15 @@ void loop() {
   char cmd[64];
   if (readLine(cmd)) {
     if (strstr(cmd,"EC")) calibrateEC(cmd);
-    else if (strstr(cmd,"PHDOWN")) pump(PHDOWN_PUMP_PIN,5);
+    else if (strstr(cmd,"PH")) calibratePH(cmd);
+    else if (strstr(cmd,"DOWN")) pump(PHDOWN_PUMP_PIN,5);
     else if (strstr(cmd,"MACRO")) pump(MACRONUT_PUMP_PIN,5);
     else if (strstr(cmd,"MICRO")) pump(MICRONUT_PUMP_PIN,5);
     else Serial.println("ERROR: Invalid command.");
   }
+
+  Serial.print("PH: ");
+  Serial.println(readPH());
 
   Serial.print("EC: ");
   Serial.print(readEC());
